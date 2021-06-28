@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "draco.fullname" . }}
+  {{- if .Values.service.annotations }}
+  annotations:
+    {{ toYaml .Values.service.annotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{ include "draco.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 8080
+      protocol: TCP
+      name: web
+  selector:
+    app.kubernetes.io/name: {{ include "draco.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
