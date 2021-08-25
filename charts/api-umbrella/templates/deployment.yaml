@@ -23,16 +23,19 @@ spec:
         {{- with .Values.deployment.additionalLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- if .Values.deployment.additionalAnnotations -}}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- with .Values.deployment.additionalAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- end }}
     spec: 
       serviceAccountName: {{ include "api-umbrella.serviceAccountName" . }}
+      {{- if .Values.podSecurityContext -}}
       securityContext:
-        runAsUser: 0
+        {{- with .Values.podSecurityContext }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
       serviceAccount: {{ include "api-umbrella.serviceAccountName" . }}
       containers:
         - name: {{ .Chart.Name }}
@@ -40,15 +43,35 @@ spec:
           image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag }}"
           command: ["api-umbrella"]
           args: ["run"]
+          {{- if .Values.containerSecurityContext -}}
           securityContext:
-            privileged: true
+            {{- with .Values.containerSecurityContext }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
           ports:
             - name: http
-              containerPort: 80
+              containerPort: {{ .Values.umbrella.port.http }}
               protocol: TCP
             - name: https
-              containerPort: 443
+              containerPort: {{ .Values.umbrella.port.https }}
               protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /api-umbrella/v1/health
+              port: http
+            initialDelaySeconds: {{ .Values.deployment.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.deployment.livenessProbe.periodSeconds }}
+            successThreshold: {{ .Values.deployment.livenessProbe.successThreshold }}
+            timeoutSeconds: {{ .Values.deployment.livenessProbe.timeoutSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /api-umbrella/v1/health
+              port: http
+            initialDelaySeconds: {{ .Values.deployment.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.deployment.readinessProbe.periodSeconds }}
+            successThreshold: {{ .Values.deployment.readinessProbe.successThreshold }}
+            timeoutSeconds: {{ .Values.deployment.readinessProbe.timeoutSeconds }}
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
           volumeMounts:
@@ -72,7 +95,7 @@ spec:
           secret:
             secretName: {{ include "api-umbrella.fullname" . }}-rootca
         {{- end }}
-          
+
       {{- with .Values.deployment.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

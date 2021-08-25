@@ -17,7 +17,11 @@ data:
     router:
       web_app_host: {{ .Values.umbrella.webHost | quote }}
     mongodb:
+      {{- if  .Values.umbrella.mongodb.url -}}
+      url: {{ .Values.umbrella.mongodb.url }}
+      {{- else -}}
       url: "mongodb://{{ .Values.umbrella.mongodb.username }}:{{ $mongoPassword }}@{{ .Values.umbrella.mongodb.host }}:{{ .Values.umbrella.mongodb.port }}/{{ .Values.umbrella.mongodb.name }}"
+      {{- end }}
 
     {{- with .Values.umbrella.config }}
     {{- toYaml . | nindent 4 }}
@@ -45,4 +49,3 @@ data:
 
     log:
       destination: console
-

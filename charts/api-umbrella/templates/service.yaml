@@ -11,10 +11,14 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: 80
-      targetPort: 80
+    - port: {{ .Values.service.port.http }}
+      targetPort: {{ .Values.umbrella.port.http }}
       protocol: TCP
       name: http
+    - port: {{ .Values.service.port.https }}
+      targetPort: {{ .Values.umbrella.port.https }}
+      protocol: TCP
+      name: https
   selector:
     app.kubernetes.io/name: {{ include "api-umbrella.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}

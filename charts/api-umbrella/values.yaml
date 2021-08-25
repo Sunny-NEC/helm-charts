@@ -12,7 +12,11 @@ service:
   # -- service type
   type: ClusterIP
   # -- port to be used by the service
-  port: 80
+  port:
+    # -- http port
+    http: 8080
+    # -- https port
+    https: 8443
   # -- addtional annotations, if required
   annotations: {}
 
@@ -22,12 +26,24 @@ serviceAccount:
   # -- specifies if the account should be created, be aware that the chart needs to run as root and sets the corresponding security context
   create: false
 
+## Security context to be used for the pod
+podSecurityContext:
+  # -- user to run the pod, defaults to root. Be aware that not every environment will allow this
+  runAsUser: 0
+
+## Security context to be used for the container
+containerSecurityContext:
+  # -- should the container run privileged? Be aware that not every environment will allow this
+  privileged: true
+
 ## deployment specific configuration
 deployment:
   # -- initial number of target replications, can be different if autoscaling is enabled
   replicaCount: 1
   # -- number of old replicas to be retained
   revisionHistoryLimit: 3
+  # -- port to access umbrella at
+  port: 80
   # -- configuration of the orion update strategy
   updateStrategy:
     # -- type of the update
@@ -41,9 +57,9 @@ deployment:
   # -- configuration of the image to be used
   image:
     ## api-umbrella image name
-    repository: fiware/api-umbrella
+    repository: profirator/api-umbrella
     # -- tag of the image to be used
-    tag: 0.15.5
+    tag: 0.15.3
     # -- specification of the image pull policy
     pullPolicy: IfNotPresent
   # -- additional labels for the deployment, if required
@@ -126,6 +142,14 @@ umbrella:
   # -- configure the host of the frontend here
   webHost: umbrella.fiware.dev
 
+  # -- configure the ports to be used by umbrella
+  port:
+    # -- http port
+    http: 8080
+    # -- https port
+    https: 8443
+    # -- port for mora to be used
+    mora: 8081
   # database connection
   mongodb:
     # -- username to authenticate with. If the user does not exist, admin config is required and a user will be created
@@ -138,31 +162,8 @@ umbrella:
     port: 27017
     # -- name of the database, needs to exist on startup
     name: api_umbrella
-
-  # -- Local authorisation registry
-  # Provide information about local authorisation registry
-  #authorisation_registry:
-    #host: https://my-registry.net
-    #token_endpoint: https://my-registry.net/connect/token
-    #delegation_endpoint: https://my-registry.net/delegation
-    #identifier: MY-AR-EORI
-
-  # -- JWS configuration
-  # Provide information for signing and validating JWT
-  #jws:
-    # Identifier of local authority
-    #identifier: MY-EORI
-    # x5c public certificate chain (array of base64 encoded certificates)
-    #x5c:
-    #  - <CERT1>
-    #  - <CERT2>
-    #  - <ROOTCERT>
-    # Root CA certificate(s) (as PEM string)
-    #root_ca: <ROOTCACHAIN>
-    # Private key (as PEM string)
-    #private_key: <PRIVATE-KEY>
-    
-  
+    # -- use this, in case you want to connect to more complex mongo installations(e.g. with replication)
+    # url: mongodb://user:password@mongo1:27017,user:password@mongo2:27017/api_umbrella
   # -- configuration of the umbrella. See https://github.com/Profirator/api-umbrella/tree/master/config and
   # https://api-umbrella.readthedocs.io/en/latest/ for more or use the out-commented part as a sane default
   config: {}
